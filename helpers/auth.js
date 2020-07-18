@@ -3,26 +3,38 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 exports.login = async function(req,res){
-  // Check if user exists
-  const user = await db.User.findOne({username: req.body.username});
-  if(!user) return res.json({error: 'Invalid username or password'});
+  try {
+    // Check if user exists
+    const user = await db.User.findOne({username: req.body.username});
+    if(!user) return res.json({error: 'Invalid username or password'});
 
-  // Check if password is correct
-  const validPass = await bcrypt.compare(req.body.password, user.password);
-  if(!validPass) return res.json({error: 'Invalid username or password'});
-  // if(!validPass) return res.status(400).json({message: 'Invalid password'});
+    // Check if password is correct
+    const validPass = await bcrypt.compare(req.body.password, user.password);
+    if(!validPass) return res.json({error: 'Invalid username or password'});
+    // if(!validPass) return res.status(400).json({message: 'Invalid password'});
 
-  // Create token and assign token
-  const token = jwt.sign({_id: user._id, username: user.username, accountType: user.accountType}, process.env.TOKEN_SECRET);
-  res.header('auth-token', token).json({
-    token,
-    user: {
-      _id: user._id,
-      accountType: user.accountType,
-      username: user.username,
-      fullName: user.fullName
-    }
-  });
+    // Create token and assign token
+    const token = jwt.sign({
+        _id: user._id, 
+        username: user.username, 
+        accountType: user.accountType
+      }, 
+      process.env.TOKEN_SECRET,
+      {
+        expiresIn: '1m'
+      });
+    res.header('auth-token', token).json({
+      token,
+      user: {
+        _id: user._id,
+        accountType: user.accountType,
+        username: user.username,
+        fullName: user.fullName
+      }
+    });
+  } catch (err) {
+    console.log(err);
+  } 
 }
 
 exports.tokenIsValid = async function(req,res){
